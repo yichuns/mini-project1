@@ -1,0 +1,146 @@
+First run a convergence test.
+#+BEGIN_SRC python
+from jasp import *
+from ase.data.molecules import molecule
+import matplotlib.pyplot as plt
+import numpy as np
+
+C2H4 =  molecule('C2H4')
+C2H4.set_cell([8, 8, 8], scale_atoms=False)
+energy=[]
+encuts = [250,300,350, 400,450, 500]
+ready=True
+for encut in encuts:
+    with jasp('molecules/Convergence-test/C2H4-{0}'.format(encut),
+              xc='PBE',
+              encut=encut,
+              ismear=0,
+              ibrion=2,
+              nsw=10,
+              atoms=C2H4) as calc:
+
+         try:
+               energy.append(C2H4.get_potential_energy())
+         except (VaspSubmitted, VaspQueued):
+               ready = False
+
+if not ready:
+   import sys; sys.exit()
+energy = np.array(energy)
+
+plt.figure()
+plt.plot(encuts,energy,'ro-')
+plt.xlabel('ENCUT (eV)')
+plt.ylabel('Total energy (eV)')
+plt.savefig('images/C2H4-converge-encut.png')
+plt.show()
+
+#+END_SRC
+
+#+RESULTS:
+#+caption: cutoff energy convergence:from 400eV, it starts to converge.
+
+#+ATTR_LaTeX: placement = [H]
+[[./images/C2H4-converge-encut.png]]
+
+Then draw the electron cloud.
+#+BEGIN_SRC python
+
+from jasp import *
+from enthought.mayavi import mlab
+from ase.data import vdw_radii
+from ase.data.colors import cpk_colors
+from ase import Atom, Atoms
+from ase.data.molecules import molecule
+
+# calculate the charge density of centered C2H4
+C2H4 = molecule('C2H4')
+C2H4.set_cell([8,8,8], scale_atoms=False)
+C2H4.center()
+ready = True
+with jasp('molecules/C2H4',
+          xc='PBE',
+          encut=400,
+          atoms=C2H4) as calc:
+    try:
+        e = C2H4.get_potential_energy()
+        atoms = calc.get_atoms()
+        x,y,z,cd=calc.get_charge_density()
+    except (VaspSubmitted, VaspQueued):
+        ready = False
+if not ready:
+    import sys; sys.exit()
+atoms_x=[]
+atoms_y=[]
+atoms_z=[]
+#plot background
+mlab.figure(bgcolor=(0, 0, 0),size=(350,350))
+#plot atoms
+for atom in atoms:
+     a = 10.25
+     atoms_x.append(atom.x*a)
+     atoms_y.append(atom.y*a)
+     atoms_z.append(atom.z*a)
+     mlab.points3d(atom.x*a,
+                  atom.y*a,
+                  atom.z*a,
+                  scale_factor=vdw_radii[atom.number]*3.,
+                  resolution=20,
+                  color=tuple(cpk_colors[atom.number]),
+                  scale_mode='none')
+
+# distribute xyz-coordinates into each atoms
+C0_x = atoms_x[0]; C0_y = atoms_y[0]; C0_z = atoms_z[0]
+C1_x = atoms_x[1]; C1_y = atoms_y[1]; C1_z = atoms_z[1]
+
+H2_x = atoms_x[2]; H2_y = atoms_y[2]; H2_z = atoms_z[2]
+H3_x = atoms_x[3]; H3_y = atoms_y[3]; H3_z = atoms_z[3]
+H4_x = atoms_x[4]; H4_y = atoms_y[4]; H4_z = atoms_z[4]
+H5_x = atoms_x[5]; H5_y = atoms_y[5]; H5_z = atoms_z[5]
+
+
+# construct bonds coordinates between C and each H
+
+bond1_x = [C0_x,C1_x];bond1_y = [C0_y,C1_y];bond1_z = [C0_z,C1_z]
+bond2_x = [C0_x,H2_x];bond2_y = [C0_y,H2_y];bond2_z = [C0_z,H2_z]
+bond3_x = [C0_x,H3_x];bond3_y = [C0_y,H3_y];bond3_z = [C0_z,H3_z]
+bond4_x = [C1_x,H4_x];bond4_y = [C1_y,H4_y];bond4_z = [C1_z,H4_z]
+bond5_x = [C1_x,H5_x];bond5_y = [C1_y,H5_y];bond5_z = [C1_z,H5_z]
+
+# plot bonds between C and each H
+mlab.plot3d(bond1_x, bond1_y, bond1_z,
+            tube_radius=0.4, colormap='Reds')
+
+mlab.plot3d(bond2_x, bond2_y, bond2_z,
+            tube_radius=0.4, colormap='Reds')
+
+mlab.plot3d(bond3_x, bond3_y, bond3_z,
+            tube_radius=0.4, colormap='Reds')
+
+mlab.plot3d(bond4_x, bond4_y, bond4_z,
+            tube_radius=0.4, colormap='Reds')
+
+mlab.plot3d(bond5_x, bond5_y, bond5_z,
+            tube_radius=0.4, colormap='Reds')
+
+
+# plot electron fog
+str = ' '.join(file('molecules/C2H4/CHG').readlines()[16:])# read file which contains charge density
+data = np.fromstring(str, sep=' ')
+data.shape = (80, 80, 80)
+
+source = mlab.pipeline.scalar_field(data.T)
+min = data.min()
+max = data.max()
+vol = mlab.pipeline.volume(source, vmin=min+0.65*(max-min),
+                                   vmax=min+0.9*(max-min)) # Vmin and Vmax are used to scale the transparency.
+mlab.view(azimuth=-45n, elevation=45, distance='auto')
+
+mlab.savefig('images/C2H4-fog.png')
+#+end_src
+
+#+RESULTS:
+====#+caption: C2H4 electron cloud
+
+#+ATTR_LaTeX: placement = [H]
+[[./images/C2H4-fog.png]]

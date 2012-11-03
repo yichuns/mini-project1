@@ -1,0 +1,32 @@
+#+TITLE:     Project1
+#+AUTHOR:    Yichun Sun
+#+DATE:      2012-11-2 Fri
+
+* Project purpose
+Figure out how to plot the electron density as a "fog" rather than with isosurfaces. The figure should have the atomic geometry in it so you can see the electron cloud around the atom positions.
+
+* Project description
+This project has two parts:
+** Part 1
+Investigate single, double and triple bonds strength order between carbon in C2H6, C2H4 and C2H2
+** part 2
+Investigate the bonds strength order between C-H, C-F and C-Cl in CH4, CF4 and CCl4.
+
+* Investigation method
+First, use DFT to relax the molecules with a cutoff energy convergence test.
+Then, visulize the electron cloud between the atoms to determine the bond strength order.
+Last, compile all the graphs in the result.org.
+
+* Investigation process
+Details of Part 1 are in C2H2-cloud.org, C2H4-org.org, C2H6-cloud.org.
+Details of part 2 are in CH4-cloud.org, CF4-cloud.org, CCl4-cloud.org.
+
+All these org-files have the same structure, that is, first convergence test, then draw the atoms, bonds and electron cloud at satisfied encut.
+
+* Limitations
+All the molecules this project investigated are in g2 database. For those which is excluded in g2, it needs more effort to define the molecule.
+
+The correction coefficent(a) in drawing the atoms is actually not precise enough. When calculating the charge density of the molecule, it divides unit cell into a 80 \times 80 \times 80 or 84 \times 84 \times 84 grids which can be seen from CHG file. So the actual atoms position magnitude is about 10 or 10.5 times the one of charge density. But it turns out to be 10.25 or 10.75 times. The extra 0.25 is approximately resulted from the error or still unknown.
+
+When drawing some a bit more complicated molecules like CH4 or CH3COCH3, which is not linear, it will cost considerable time and effort to define the bond, because the code  mlab.plot3d(atoms_x, atoms_y, ztoms_z) only connects atoms one by one. For example,
+[[./images/C2H6-fog-mess.png]]

@@ -1,0 +1,15 @@
+RESULT
+
+* Bonds strength order of C-H, C-F and C-Cl
+[[./images/CF4-fog.png]]
+[[./images/CCl4-fog.png]]
+[[./images/CH4-fog.png]]
+
+From the figures above, we can tell from the color of electron cloud that the bonds strength order is C-F < C-Cl < C-H. Actually, methane is the most stable and CF4 is the least among the three chemicals.
+
+* Bonds strength order of C2H6, C2H4 and C2H2
+[[./images/C2H6-fog.png]]
+[[./images/C2H4-fog.png]]
+[[./images/C2H2-fog.png]]
+
+From above three figures, we can tell that bonds strength order between C-C is C2H6 < C2H4 < C2H2. However, the stability order is just the opposite. From my point of view, electron cloud acts like a shield to protect the atoms from attack. Ethane molecule is coverd by 'cloud' all over its 'body', so it is the most stable. While acetylene molecule only has some 'cloud' around C-C triple bond, so much of its body is exposed to enimies and is the least stable.

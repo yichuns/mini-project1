@@ -1,0 +1,136 @@
+First run a converge test on different cutoff energies.
+#+BEGIN_SRC python
+from jasp import *
+from ase.data.molecules import molecule
+import matplotlib.pyplot as plt
+import numpy as np
+
+CCl4 =  molecule('CCl4')
+CCl4.set_cell([8, 8, 8], scale_atoms=False)
+energy=[]
+encuts = [250,300,350, 400,450, 500]
+ready=True
+for encut in encuts:
+    with jasp('molecules/Convergence-test/CCl4-{0}'.format(encut),
+              xc='PBE',
+              encut=encut,
+              ismear=0,
+              ibrion=2,
+              nsw=10,
+              atoms=CCl4) as calc:
+
+         try:
+               energy.append(CCl4.get_potential_energy())
+         except (VaspSubmitted, VaspQueued):
+               ready = False
+
+if not ready:
+   import sys; sys.exit()
+energy = np.array(energy)
+
+plt.figure()
+plt.plot(encuts,energy,'ro-')
+plt.xlabel('ENCUT (eV)')
+plt.ylabel('Total energy (eV)')
+plt.savefig('images/CCl4-converge-encut.png')
+plt.show()
+#+END_SRC
+
+#+RESULTS:
+
+#+caption: cutoff energy convergence:from 350eV, it starts to converge.
+
+#+ATTR_LaTeX: placement = [H]
+[[./images/CCl4-converge-encut.png]]
+
+Then plot the electron cloud using encut = 400eV.
+#+BEGIN_SRC python
+from jasp import *
+from enthought.mayavi import mlab
+from ase.data import vdw_radii
+from ase.data.colors import cpk_colors
+from ase.data.molecules import molecule
+
+CCl4 = molecule('CCl4')
+CCl4.set_cell([8,8,8], scale_atoms=False)
+CCl4.center()
+
+ready=True
+with jasp('molecules/CCl4',
+          xc='PBE',
+          encut=350,
+          atoms=CCl4) as calc:
+    try:
+     atoms = calc.get_atoms()
+     e = atoms.get_potential_energy()
+     x,y,z,cd=calc.get_charge_density()
+    except (VaspSubmitted, VaspQueued):
+     ready = False
+if not ready:
+   import sys; sys.exit()
+
+atoms_x=[]
+atoms_y=[]
+atoms_z=[]
+# plot background
+mlab.figure(1,bgcolor=(0, 0, 0), size=(350, 350))
+mlab.clf()
+#plot atoms
+for atom in atoms:
+     atoms_x.append(atom.x*10.25) #10.25 is a correction coefficient
+     atoms_y.append(atom.y*10.25)
+     atoms_z.append(atom.z*10.25)
+     mlab.points3d(atom.x*10.25,
+                  atom.y*10.25,
+                  atom.z*10.25,
+                  scale_factor=vdw_radii[atom.number]*3.,
+                  resolution=20,
+                  color=tuple(cpk_colors[atom.number]),
+                  scale_mode='none')
+# distribute xyz-coordinates into each atoms
+C_x = atoms_x[0];   C_y = atoms_y[0];  C_z = atoms_z[0]
+Cl1_x = atoms_x[1]; Cl1_y = atoms_y[1]; Cl1_z = atoms_z[1]
+Cl2_x = atoms_x[2]; Cl2_y = atoms_y[2]; Cl2_z = atoms_z[2]
+Cl3_x = atoms_x[3]; Cl3_y = atoms_y[3]; Cl3_z = atoms_z[3]
+Cl4_x = atoms_x[4]; Cl4_y = atoms_y[4]; Cl4_z = atoms_z[4]
+# construct bonds coordinates between C and each H
+bond1_x = [C_x,Cl1_x];bond1_y = [C_y,Cl1_y];bond1_z = [C_z,Cl1_z]
+bond2_x = [C_x,Cl2_x];bond2_y = [C_y,Cl2_y];bond2_z = [C_z,Cl2_z]
+bond3_x = [C_x,Cl3_x];bond3_y = [C_y,Cl3_y];bond3_z = [C_z,Cl3_z]
+bond4_x = [C_x,Cl4_x];bond4_y = [C_y,Cl4_y];bond4_z = [C_z,Cl4_z]
+# plot bonds between C and each H
+mlab.plot3d(bond1_x, bond1_y, bond1_z,
+            tube_radius=0.4, colormap='Reds')
+
+mlab.plot3d(bond2_x, bond2_y, bond2_z,
+            tube_radius=0.4, colormap='Reds')
+
+mlab.plot3d(bond3_x, bond3_y, bond3_z,
+            tube_radius=0.4, colormap='Reds')
+
+mlab.plot3d(bond4_x, bond4_y, bond4_z,
+            tube_radius=0.4, colormap='Reds')
+
+# plot electron fog
+str = ' '.join(file('molecules/CCl4/CHG').readlines()[15:])# read file which contains charge density
+data = np.fromstring(str, sep=' ')
+data.shape = (80, 80, 80)
+
+source = mlab.pipeline.scalar_field(data)
+min = data.min()
+max = data.max()
+vol = mlab.pipeline.volume(source, vmin=min+0.65*(max-min),
+                                   vmax=min+0.9*(max-min)) # Vmin and Vmax are used to scale the transparency.
+mlab.view(azimuth=-90, elevation=90, distance='auto')
+
+mlab.savefig('images/CCl4-fog.png')
+
+
+#+END_SRC
+
+#+RESULTS:
+
+#+caption: CCl4 electron cloud
+
+#+ATTR_LaTeX: placement = [H]
+[[./images/CCl4-fog.png]]
